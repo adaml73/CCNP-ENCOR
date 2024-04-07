@@ -1,0 +1,133 @@
+EAP
+inner auth methods are tunneled within PEAP, EAP-FAST, and EAP-TTLS
+aka outer or tunneled TLS authentication methods
+
+EAP-MD5
+uses MD5 to hide credentials in a hash
+hash is sent ot auth server
+does not have a method for mutual authenticaiton
+
+EAP-TLS
+uses TLS PKI
+provides mutual authentication of supplicant to auth server and auth server ot supplicant
+both supplicant and auth server must be assigned a digital certificate signed by a CA
+this is the most secure auth method, but also the most difficult to deploy as a result of the admin burden 
+
+PEAP
+only auth server requires a certificate
+PEAP forms a tunnel between supplicant and auth server, then uses one of the following methods to auth the supplicant through the outer PEAP
+TLS tunnel
+
+EAP-MSCHAPv2 (PEAPv0) - clients credentials are sent to server. most common method, sent to radius server
+EAP-GTC(PEAPv1) - created by cisco as an alternative to MSCHAPv2 to allow generic auth to vertually any identity store
+EAP-TLS - most secure EAP auth method, essentially a tls tunnel in a tls tunnel, rarely used due to admin burden
+EAP-FAST - mush like PEAP, developed by cisco as an alternative to PEAP to allow for faster re-auths and support for roaming
+		uses PACS to reauth faster, (protected authentication credentials) 
+
+EAP-TTLS - much like peap, but not as common. EAP-TTLS can support additional inner methods such as PAP, CHAP, MS-CHAP, unlike PEAP
+
+
+EAP chaining
+included with EAP-FAST
+supports machine and user auth inside a single outer TLS tunnel
+
+
+MAC Authentication Bypass (MAB)
+port based access control - using mac address of an endpoint, typically a fallback from 802.1x
+
+authenticator (switch) waits three unanswered EAPoL identity request, determines the endpoint does not have a supplicant, drops back to MAB
+opens port to learn mac address of device, with that the switch crafts a radius access-request message, and sends it off
+
+
+Web Authentication (WebAuth)
+like MAB, but only for users, not devices
+two types
+	* Local Web Authentication
+	* Centralized Web Authentication with Cisco ISE
+
+Local Web Authentication
+	First form created
+	redirects https to portal
+	portal is not customizable, does not support AUP (acceptable use policy), password 	changing, device registration, and self-registration
+	also does not support vlan assignment, only supports ACL assignment. 
+	
+Central Web Auth with Cisco ISE
+	supports dACLs, VLAN auth, advanced services, etc
+
+Enhanced Flexible authentication (FlexAuth)
+	AKA Access session manager
+	allows multiple authentication methods concurrently 
+	allows endpoints to be brought online faster instead of waiting in succession for 	each method to fail
+	Key component of IBNS 2.0 Integrated solution
+
+Cisco Identity-based networking services (IBNS 2.0)
+	Integrated solution offering Authentication, Access control, and user policy 	enforcement
+	combo of the following
+	* Enhanced FlexAuth
+	* Cisco common classificaiton language (C3PL)
+	* Cisco ISE
+	
+Cisco TrustSec
+	uses Security Group Tags
+	performs ingress tagging and egress filtering to enforce access control policy
+	(refered to as Scalable Group Tags in SD-Access)
+
+	configuraiton happens in three stages
+		* ingress classification
+		* propagation 
+		* Egress enforcement
+	Ingress classification
+		assigning tags to users, endpoints, ect
+		can be done in two ways
+		* dynamic assignment - downloaded as an auth option from ISE
+
+		* Static - (could be used in datacenters)
+			* IP to SGT tag
+			* Subnet to SGT tag
+			* VLAN to SGT tag
+			* L2 interface to SGT tag
+			* L3 interface to SGT tag
+			* port to SGT tag
+			* port profile to SGT tag
+	Propagation
+		process of communicating mappings to the trustsec network devices that will 
+		enfoce policy
+		Two methods
+		* Inline tagging (native) - switch inserts SGT tag inside a frame to allow upstream devices to read and apply policy
+			only supported by cisco hardware with ASIC support for trustsec, frame will be dropped by anything else
+		* SXP propagation - TCP based peer to peer protocol, used for devices that do not support SGT inline tagging in hardware (speaker/listener pairs)
+			- also available via pxgrid
+	Egress enforcement
+		enfocement of policies
+		two major ways of doing so
+		* Security Group ACL (SGACL) - enforcement on routers and switches, access lists filter based on source and destination SGT tags
+		* Security Group Firewall (SGFW) - enforcement on firewalls, needs tag-based rules to be defined locally on the firewall
+
+	
+	MACsec
+	IEEE 802.1AE - L2 hop-by-hop encryption method
+		only encrypted between swithces/devices, unencrypted to swithc can review
+		Based on ethernet frame format
+		Adds an additional
+			16-byte MACsec security tag field (802.1AE Header)
+			16-byte Integrity Check Value (ICV)
+		authentication via Galois Method Authentication Code (GMAC) or authenticated encryption using Galois/Counter Mode Advanced Encryption Standard (AES-GCM)
+
+		Ethertype, first two octets - 0x88e5
+		
+		Two MACsec keying mechanisms are available
+			* Security Association Protocol (SAP) - cisco proprietary, used between cisco switches
+			* MACsec Key Agreement (MKA) protocol - provides required session keys and manages encrypiton keys
+
+		Downlink MACsec - encrypted link between an endpoint and a switch
+				uses MKA keying protocol
+
+		Uplink MACsec - encrypting link between switches with 802.1ae, use SAP by default- AES-GCM-128 encryption, can be done manually or dynamically
+				dynamic requires 802.1x auth between switches
+	
+
+		
+
+	
+
+	

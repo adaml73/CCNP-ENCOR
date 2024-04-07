@@ -1,0 +1,424 @@
+CCNP - Network Device Access Control and Infrastructure Security
+
+Access Control Lists (ACLs)
+	Permit or deny packet classification, based on ACE match statements
+	Order of operations, top (lowest sequenct) to bottom (highest sequence) until match is found
+	
+	Numbered standard ACL - based on source network, use numbered entries 1-99 and 1300 and 1999
+		Example: 
+		access-list 1 deny 192.168.0.0 0.0.255.255
+		access-list 2 permit any 
+		interface GigabitEthernet0/1
+		 ip access-group 1 in
+	
+	Numbered extended ACLs - based on source, destination, protocol, port, or combo, use numbered entries 100-199, and 2000-1699
+		Example: 
+		access-list 100 deny tcp any any eq 23
+		 access-list 100 deny icmp any any
+		 access-list 100 deny ip host 192.168.100.1 host 10.1.2.1
+		 access-list 100 permit any any
+		interface GigabitEthernet0/1
+		 ip access-group 100 in
+	
+	Named ACLs - standard and extended ACLs that can be given names
+		Example:
+		*Named Standard
+		ip access-list standard STANDARD_EXAMPLE_ACL
+		 deny 192.168.0.0 0.0.255.255
+		 deny host 192.168.100.1
+		 permit any
+		 exit
+		interface GigabitEthernet0/1
+		 ip access-group STANDARD_EXAMPLE_ACL in
+		
+		*Named Extended
+		ip access-list EXTENDED_EXAMPLE_ACL
+		 deny tcp any any eq 23
+		 deny icmp any any
+		 deny ip host 192.168.100.1 host 10.1.2.1
+		 permit ip any any
+		 exit
+	
+	Port ACLs (PACLS) - extended MAC ACLS to filter traffic on L2 switchports	
+		restrictions
+		 only support filtering incoming traffic on an interface
+		 cannot filter L2 control packets (CDP, VTP, DTP, UDLD, STP, ECT)
+		 supported only in hardware
+		 do not support acls to filter IPv6,ARP, MPLS
+		
+		Examples: 
+		ip access-list extended PACL
+		 deny tcp any any eq 23
+		 deny icmp any any
+		 deny ip host 10.1.2.2 host 10.2.1.2
+		 permit ip any any
+		 exit
+		interface GigabitEthernet0/1
+		 switchport
+	 	 ip access-group PACL in 
+		
+	
+	VLAN ACLS (VACLs) - extended MAC ACLs to filter traffic on VLANs, filter traffic bridged within a VLAN, or routed into/out of a VLAN
+		Example: 
+		*Drop Telnet traffic 
+		ip access-list extended TELNET
+		 permit tcp any any eq 23
+		 exit
+		ip access-list extended OTHER
+		 permit ip any any
+		 exit
+		vlan access-map VACL_20 10
+ 		 match ip address TELNET
+		 action drop log
+		 exit 
+		vlan access-map VACL_20 20
+		 match ip address OTHER
+   		 action forward
+		*apply the vlan filter with the command below
+		vlan filter VACL_20 vlan-list 20
+	
+	
+	*all use wildcard masks
+	
+	interations/order of operations	
+		*if assigned on a port by ISE, dACL assigned by ISE overwrites PACL
+	
+
+Terminal Lines and Password Protection
+	Console (cty)
+	 line con 0 (show line as cty)
+	
+	auxiliary port (aux) - line aux 0 (mainly used for access via modems)
+	
+	Virtual terminal (vty) - line vty 0 4 - 
+		
+	 
+	Password Types
+		type 0 - most insecure, not encrypted, (enable password)
+		type 5 - Uses MD5, only cracked via brute force, recommended over type 0 and type 7 (enable secret, username secret)
+		type 7 - cisco proprietary Vigenere encryption, easily cracked. (service password-encryption)
+		type 8 - PBKDF2 sha-256. considered uncrackable
+		type 9 - SCRYPT, considered uncrackable
+
+	Password encryption
+		service password-encryption 
+			encrypts all type 0 password (ex: bgp password)
+			any passwords configured before will remain unencrypted, and need to be reenetered. 
+			encrypts with type 7, so easily crackable
+
+	Username and Password authentication
+		configuring a username
+			username () password () - plaintext type 0 
+			username () secret () - type 5
+			username () algorithm-type [md5|sha256|scrypt] secrect () - type 5, type 8 or type 9, this is prefered
+
+		configured line local password auth
+			on the line:
+			login con 0
+			 password ()
+			 login
+		configure line local username and password
+			on the line:
+			*global config
+			 username () secrect/password, ect
+			login con 0
+			 login local
+
+privledge leves and role-based access control (RBAC)
+	Priv level 0 - includes disable, enable, exit, help, and logout commands
+	priv level 1 - (aka user EXEC) (r1>) - from here, not possible to make config changes
+	priv level 15 - (aka Priv EXEC)(r1#) - all cli commands available
+
+	different levels can be configured
+		range 2 to 14
+		privilege [mode] level [level] [command string]	
+		ex:
+			username cisco privilege 5 secret Cisco
+			privilege configure level 5 interface
+
+		when logging in, view priv level with 
+			show privilege
+			
+Controlling access to vty lines w/ ACLs
+	access-list 10 permit 10.12.0.0 0.0.0.255
+	access-list 10 deny any
+	line vty 0 4
+	access-class 10 in
+	
+	transport input [all|none|telnet|ssh|telnet ssh]
+
+	verify access
+	show line 
+
+Enabling SSH vty access	
+	SSH version 1 (SSHv1) - should be avoided
+	SSH version 2 (SSHv2) - certified under NIST, should be used
+
+	How to configure
+		1. configure hostname
+			hostname [hostname]
+		2. configure a domain name
+			ip domian-name [domain-name]
+		3. generate crypto keys
+			crypto key generate rsa
+			- you will be prompted to select modulus, needs to be atleast 768
+
+		to force SSHv2, use 
+			ip ssh version 2
+	Auxiliary Port
+		disable with 
+			line aux 0
+				no exec
+	Exec timeout
+		exec-timeout [minutes][seconds]
+		default setting is ten minutes
+
+		to disable exec timeout - both work
+			exec-timeout 0 0
+			no exec-timeout
+
+	absolute timeout
+		terminates an exec timeout after a specified timeout, even if connection is 		being used, recommended to give users a warning
+
+		line vty 0 4
+		 exec-timeout 2 0
+		 absolute-timeout 10
+		 logout-warning 20
+
+Authentication, authorization, and accounting (AAA)
+	Authentication - allows users to be identified and verified before getting access to a device/service
+
+	Authorization - defines access privileges and restrictions
+
+	accounting - Basically keeps a log, gives the ability to track and log user access, including
+			* User IDs
+			* start and stop times
+			* permitted CLI commands
+	
+	two most popular protocols 
+		* Radius and TACACS+
+
+	two most common use cases
+		* access to network equipment - TACACS+ is the prefered protocol
+		* secure network access control - obtain ID of device and/or user before allowing it on the network. RADIUS is the prefered protocol
+
+	TACACS+ 
+		developed by cisco
+		TCP port 49
+		capable of breaking out AAA into independent functions, making it popular with network device AAA
+
+	RADIUS
+		IETF standard
+		client/server model like TACACS+
+		Supports EAP, unlike TACACS+ which does not
+		RADIUS needs to return all auth parameters in a single reply. TACACS+ can request auth parameters seperatly and multile times
+
+Configuring AAA for network Device access control
+	configure TACACS+ on an IOS device
+
+	1. create local user w/ full privileges
+		username [username] privilege 15 alogrithm-type {md5|sha256|script} secret [password]
+	2. enable AAA functions
+		aaa new-model
+	3. add a tacacs server (depends on ios version)
+		on Version IOS before 15.x
+		 tacacs-server host [hostname|host-ip-address] key [key-string]
+		on version IOS 15.x and later
+		 tacacs server [name]
+		 address ipv4 [hostname|host-ip-address]
+		 key [key-string]
+	4. create an AAA group
+		aaa group server tacacs+ [group-name]
+		server name [server-name]
+	5. enable AAA login auth 
+		aaa authentication login [default | custom-list-name] [method1]...
+		- method lists enable login auth, default applies the method list that follow in the command. ,custom list allows for a custom name for the list that follows
+		- to apply a custom list
+			login authentication [custom list name] - under line configuration
+		- these are applied left to right
+	6. enable AAA authorization - enables shell auth for all lines except the console line
+		aaa authorization exec [default|custom-list-name]
+	
+	7. enable AAA auth for the console 
+		aaa authorization console
+	8. enable AAA command auth
+		aaa authorization commands [priv level] 
+	9. enable command auth in global config
+		aaa authorization config-commands
+       10. enable login accounting
+		aaa accounting exec 
+		- common to use keyword start-stop - accounting starts when a session does and stops once a session ends
+       11. Enable command accounting 
+		aaa accounting commands [priviledge level]
+		- applied per priviledge level
+
+	* use if-authenticated method at the end of every auth command to allow commands in the event tacacs servers are unreachable but a user is locall authed
+	
+		
+	Verify AAA
+		show privilege
+		sho version
+
+Zone-Based Firewalls (ZBFW)
+	ACLs are stateless, dont inspect packet payload
+	stateful firewalls can review layer 4 - 7 to review state of transmission
+
+	ZBFW - stateful firewall integrated into ios
+	uses security zones, router interfaces are assigned to a zone that establishes a security boundary. 
+		* interfaces in the same zones can communicate freely
+
+	self zone - system level - includes all the routers ip addresses, all traffic is permitted by default to support mgmt and control plane functions
+		defined automatically
+	
+	default zone - system level zone - any interface not assigned to a different zone gets placed here by default
+		traffic that is sent from an interface not in a zone, to one that is, traffic is dropped, enabling the default zone allows this traffic to flow
+
+	configuration
+		1. define zone, in this case for the internet facing interface
+			zone security OUTSIDE
+			 description External Interface
+		2. define inspection class map i.e. how traffic will be classified
+			class-map type inspection [match-all|match-any] (class name)
+			* match-all - (Boolean AND) traffic needs to match all the conditions in the class map to qualify - this is default 
+			* match-any - (Boolean OR) traffic needs to match only one condition in the class map
+
+			ip access-list extended DHCP-IN
+		 	 permit udo any eq bootps any eq bootpc
+			ip access-list extended permit ACL-IPSEC
+		 	 permit udp any any eq non500-isakmp
+		 	 permit udp any any eq isakmp
+
+			class-map type inspect match-any CLASS-OUTSIDE-TO-SELF-INSPECT
+		 	 match access-group ACL-IPSEC
+		 	 match access-group DHCP-IN
+
+		verify: 
+			show class-map type inspect
+
+		3. define inspection policy map - applies the firewall policy to the class map
+			policy-map type inspect (policy name)
+		       you then define a firewall action under the class map
+			drop - log - silently discards packets that match the class map
+			pass - log- router forwards packets from source to destination zone, but only in one direction, you will need to define a policy to permit return traffic
+			inspect - gives the option for state based control - router maintains state and permits traffic flows in opposite direction - has an implicity drop
+			
+			full config 
+			policy-map type inspect POLICY-OUTSIDE-TO-INSIDE
+			 class type inspect OUTSIDE-TO-INSIDE_INSPECT
+				inspect
+			 class type inspect OUTSIDE-TO-INSIDE_PASS
+				pass
+			 class DEFAULT-DROP
+				drop
+			
+			verify:
+				show policy-map type inspect
+		4. apply policy map to traffic flow source and destination
+			zone-pair security OUTSIDE-zone source OUTSIDE  destination self
+			 service-policy type inspect POLICY-OUTSIDE-TO-INSIDE
+
+		5. apply zones to interfaces
+			interface GigabitEthernet0/1
+			 zone-member security OUTSIDE
+	
+			verify: 
+				show policy-map type inspect zone-pair (zone pair name)
+		
+			
+			view counters of traffic hitting it
+				show ip access
+
+	verify ZBFW
+
+Control-Plane Policing (CoPPP
+	Qos policy applied to or from a routers control plane CPU
+	intent is to protect CPU from unexpected traffic spikes that could impact stability
+	typically, only an input policy is used
+	
+	police command 
+		options conform, exceed, and violate
+	configure ACLs
+		ip access-list extended ACL-CoPP-ICMP
+		 permit icmp any any echo-reply
+		 permit icmp any any ttl-exceeded
+		 permit icmp any any unreachable
+		 permit icmp any any echo 
+		 permit udp any any range 33434 33463 ttl eq 1
+
+	configuring class maps
+		class-map match-all CLASS-CoPP-ICMP
+		 match access-group name ACL-CoPP-ICMP
+		
+	Configuring Policy Map
+		balancing between preventing overload and not impacting prod traffic is difficult.
+		setting violate action to transmit at first is a good idea
+		
+		policy-map POLICY-CoPP
+		 class CLASS-CoPP-ICMP
+		  police 8000 conform-action transmit exceed-action transmit
+			violate-action drop
+		class CLASS-CoPP-IPsec
+		 police 64000 conform-action transmit exceed-action transmit
+		 	violate-action transmit
+
+	applying the policy map
+		control-plane
+		 service-policy input POLICY-CoPP
+	
+	verify:
+		show policy-map control-plane input
+
+	
+Device Hardening
+	* Disable topology discovery tools:
+		(CDP, LLDP)
+		no cdp enable
+		no lldp transmit
+		no lldp receive
+	* Disable TCP and UDP small service 
+		service tcp-keepalive-in 
+		service tcp-keepalive-out
+			sends tcp keepalives, kills half-open or orphaned connections
+	
+	* disable ip redirect services
+		icmp redirects inform a device of a better path to a destination network, IOS will send if it detects network traffic hairpinning
+		no ip redirects
+	
+	* Disable proxy address resolution protocol (ARP)
+		Proxy ARP - technique a router uses to answer ARP requests inteded for a different router. 
+		router fakes its identity and sends out an ARP request for the router that is responsible for that network
+		this can be spoofed 
+	
+	* Disable service configuration
+		Prevents automatic config from remote devices
+			no service config 
+
+	* Disable Maintenance Operation Protocol (MOP)
+		not needed, disable globablly
+		no mop enabled
+
+	* Disable packet assembler/disassembler (PAD) service
+		used for x.25, not needed
+		no service pad
+
+	
+		
+		
+		
+	
+	
+		
+
+	
+				
+			
+	
+		
+		
+		
+
+	 
+		
+		
+	
+	
