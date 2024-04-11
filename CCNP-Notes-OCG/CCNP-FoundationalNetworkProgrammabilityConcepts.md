@@ -64,6 +64,56 @@
 				
 			
 			
+	## Cisco vManage APIs
+		Need to have
+			* url bar must have api call to target auth api
+			* the HTTP POST method is used to send credentials to cisco vmanage
+			* headers content-type key must be appliation/x-www-form-urlencoded
+			* body must contain keys with the j_ devnetuser and the j_password Cisco123!
+			
+			JSESSIONID = java session ID
+			
+	## Data Models and Supporting Protocols
+		covers the following
+		* Yet Another Next Generation (YANG) modeling language
+		* Network Configuration Protocol (NETCONF)
+		* RESTCONF
+
+		### Yang Data Models
+			alternative to SNMP MIBS
+			RFC 6020
+			use a tree structure
+			constructed into hierarchical modules
+
+		### NETCONF
+			RFC 4741 and RFC 6241
+			IEFT standard protocol that uses YANG models to communicate with various devices on the network. 
+			can run on ssh, tls, and SOAP
+			SNMP cannot distinguish between config data and operational data, but netconf can. 
+			netconf uses paths where snmp uses OIDs (example interfaces/interface/eth0)
+
+			capabilities = information exchanged by netconf
+			
+			netconf uses RPC messages in XML format to send information between hosts
+		
+		### RESTCONF
+			
+			RFC804, 
+			provides a restful api experience while still leveraging the device abstraction capabilities provided by netconf. 
+			
+			Supports:
+			* GET
+			* POST
+			* PUT
+			* DELETE
+			* OPTIONS
+			
+			requests and respondes can use either JSON or XML
+			
+	## Cisco DEVNET
+		
+	## Basic Python Components and Scripts
+		
 			
 			
 			
