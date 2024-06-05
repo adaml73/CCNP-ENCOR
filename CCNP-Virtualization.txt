@@ -1,0 +1,143 @@
+CCNP - Virtualization
+	server virtualization:
+		Hypervisors
+			vmware vsphere, hyper-v, xenserver, red hat KVM
+		type 1: bare metal
+		type 2: run on a host os (typically used by clients, like vmware fusion/virtualbox)
+
+	Container:
+		share underlying resoures of host os, lightweight application instances
+		dependencies are packages in the container image
+
+		most popular container engines
+		* rkt (rocket)
+		* open container initiative
+		* LXD ("lexdi", from canonical)
+		* linux-vserver
+		* Windows containers
+		
+	Virtual switching
+		vswitch - software based L2 switch
+
+		docker - creates a default vbridge called Docker0
+			default subnet block 172.17.0.1/16
+			
+	Network Functions Virtualization
+		architectural framework created by the European Telecommunications Standards Institute (ESI)
+		defines standards to decouple network functions from proprietary hardware-based appliances, and instead run on x86 based servers
+		
+		network function (NF) = function performed by a physical appliance, (i.e. router, switch, firewall)
+		
+		NFV Infrastructure - hardware and software components that comprise the platform where virtual network functions are deployed
+
+		Virtual Network Functions
+			- Software or virtual version of an NF. Typically run on a hypervisor as a VM
+				commonly used for layer 4 - 7 functions
+				(like loadbalancers or application delivery controllers, firewalls, intrustion detection systems, and wan optimization appliances)
+
+			common examples:
+				* cisco CSR1000v
+				* Cisco CSP2100
+				* Cisco ISRv
+				* cisco NGFWv
+				* Cisco ASAv
+
+		Virtual infrastucture manager
+			responsible for managing and controlling the NFVI hardware resources (compute,storage, network) and lifecycle management
+
+			service chaining - chaining VNFs together to provide an NFV service or solution
+			
+			element managers (EMs) - aka Element Management Systems - responsible for the functional management of VNFS
+				EX: fault, config, accounting, performance, and security fuctions for vnfs (an EM can also be an VNF)
+
+		Management and Orchestration
+			NFV Orchestrator - responsible for creating, maintaining and tearing down VNF network services
+				NFV orchestrator and VNF manager are together known as NFV management and orchestration (MANO)
+
+		Operations support system/Business support system
+			OSS - typically provided by service providers, can assist with inventory, configuration, resolving network issues
+			BSS - Product management, customer management, and revenue management (billing)
+			
+	VNF Performance 
+		north-south - into hosting server through a physical nic, sent to a VNF, then sent from the VNF back out to the physical wire
+		east-west - into hosting server through a pnic and sent to a vnf, then could be sent to another VNF, and possibly service chained to more VNFs then sent out the physical 			wire
+
+		I/O technologies developed to prevent CPU interrupts from packet processing - (physical NIC must support these technologies in order to implement them)
+			* OVS DataPlane development kit (OVS-DPDK)
+			* PCI Passthrough
+			* Single-root I/O Virtualization (SR-IOV)
+
+			OVS-DPDK
+				
+			PCI Passthrough
+				allows VNFs to have direct access to physical PCI devices, downside is you can only assign one PCI device to a single VNF
+				
+			SR-IOV
+				enhancement to PCI passthrough
+				allow multiple VNFs to share the same pNIC
+				
+				Virtual Ethernet Bridge (VEB) - traffic between VNFs attach to the same pNIC os hardware switched directly to the pNIC
+
+				Virtual Ethernet Port Aggregator (VEPA) - traffic between VNFs attached to the same pNIC is switched by an external switch
+
+			Cisco Enterprise Network Functions Virtualization (ENFV)
+				multiple network devices on one x86 platform
+
+				management centralized via DNA center
+
+				supports cisco SD-WAN cEdge and vEdge virtual router onboarding
+				
+				Supports Third Party VNFs
+	
+			ENFV solution architecture:
+				MANO
+				VNFs
+				NFVIS - network functions virtualization infrastructure software (NFVIS) - operating system, provides virtualization capabilities and faciliatates the 						deploment and operation of VNFs/hardware components
+				
+				hardware resources - x86 based compute resource 
+			
+				Cisco support VNFs
+					* Cisco ISRv for routing
+					* Cisco ASAv - firewall
+					* cisco NGFWv - firewall and intrusion detection/prevention
+					* Viptela vEdge
+					* cEdge
+					* Cisco vWAAs - wan optimization
+					* Cisco vWLC - wireless lan controllers
+
+				Third Party VNFs
+					* thousandeyes
+					* fortinent
+					* paloalto
+					* infovista
+					* CTERA
+					* Windows Server
+					* Linux Server
+
+				x86 hosting platforms
+					* Cisco enterprise network computing system (ENCS)
+					* Cisco cloud services platform
+					* cisco 4000 series ISR w/ cisco UCS e-series blade
+					* UCS c-series
+		
+					
+	
+
+				
+			
+
+		
+				
+
+				
+				
+				
+				
+
+		
+	
+		
+			
+
+		
+			
